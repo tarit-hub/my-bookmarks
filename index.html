@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Bookmarks Dashboard</title>
+    <!-- Tailwind CSS (Aesthetic Styling) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', 'Prompt', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+    <div id="loading-overlay" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center">
+        <div class="w-16 h-16 border-4 border-brand-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-slate-400 font-medium animate-pulse">กำลังเชื่อมต่อฐานข้อมูลคลาวด์ส่วนตัวของคุณ...</p>
+    </div>
+
+    <div id="auth-screen" class="hidden fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-brand-600/20 rounded-full blur-3xl"></div>
+            
+            <div class="text-center mb-8 relative">
+                <div class="w-16 h-16 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid fa-vault text-2xl text-white"></i>
+                </div>
+                <h2 id="auth-title" class="text-2xl font-bold text-white mb-2">เข้าสู่ระบบ Dashboard ส่วนตัว</h2>
+                <p id="auth-subtitle" class="text-slate-400 text-sm">กรุณากรอกรหัสผ่านเพื่อเข้าใช้งานพื้นที่จัดเก็บข้อมูลส่วนตัวของคุณ</p>
+            </div>
+
+            <form id="auth-form" class="space-y-4 relative">
+                <div>
+                    <label id="auth-label" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">รหัสผ่าน</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" id="auth-password" required placeholder="••••••••" 
+                            class="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-white placeholder-slate-600 transition-all">
+                    </div>
+                    <p id="auth-error" class="hidden text-red-500 text-xs mt-2 flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation"></i> รหัสผ่านไม่ถูกต้อง ลองใหม่อีกครั้ง
+                    </p>
+                </div>
+                <button type="submit" id="auth-submit-btn" 
+                    class="w-full bg-brand-600 hover:bg-brand-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-brand-600/20 transition-all flex items-center justify-center gap-2">
+                    <span>ยืนยันรหัสผ่าน</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden flex-1 flex flex-col md:flex-row min-h-screen">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col shrink-0">
+            <!-- Brand Info -->
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-book-bookmark text-white"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-md tracking-wide text-white block leading-none">My Space</span>
+                        <span class="text-[10px] text-brand-400 font-semibold tracking-wider uppercase">Cloud Synced</span>
+                    </div>
+                </div>
+                <button onclick="logout()" class="text-slate-400 hover:text-red-400 p-2 rounded-lg hover:bg-slate-800/50 transition-colors" title="ออกจากระบบ">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Categories & Tags -->
+            <div class="p-4 flex-1 overflow-y-auto space-y-6">
+                <div>
+                    <div class="flex items-center justify-between mb-3 px-2">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">หมวดหมู่ทั้งหมด</span>
+                        <button onclick="openManageCategoriesModal()" class="text-slate-500 hover:text-brand-400 text-xs transition-colors" title="จัดการหมวดหมู่">
+                            <i class="fa-solid fa-gear"></i>
+                        </button>
+                    </div>
+                    <nav class="space-y-1" id="categories-list">
+                        <!-- Loaded dynamically -->
+                    </nav>
+                </div>
+
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 block mb-3">แท็กยอดนิยม</span>
+                    <div class="flex flex-wrap gap-1.5 px-2" id="tags-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Google Sheets & Backup actions in Sidebar Footer -->
+            <div class="p-4 border-t border-slate-800 bg-slate-950/40 space-y-2">
+                <button onclick="openSheetsModal()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/10">
+                    <i class="fa-solid fa-file-excel"></i> สำรองข้อมูล Google Sheets
+                </button>
+                <div class="flex justify-between gap-2 text-[11px]">
+                    <button onclick="exportData()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-download"></i> ส่งออกไฟล์
+                    </button>
+                    <button onclick="document.getElementById('import-file').click()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-upload"></i> นำเข้าไฟล์
+                    </button>
+                    <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(event)">
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN DASHBOARD CONTENT AREA -->
+        <main class="flex-1 flex flex-col bg-slate-950">
+            <header class="h-20 border-b border-slate-800 flex items-center justify-between px-6 gap-4 bg-slate-900/20 backdrop-blur-md">
+                <div class="flex-1 max-w-lg relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="search-input" oninput="filterLinks()" placeholder="ค้นหาชื่อลิงก์, คำอธิบาย หรือ แท็ก..." 
+                        class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-white placeholder-slate-500 transition-all text-sm">
+                </div>
+
+                <button onclick="openAddModal()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-brand-600/10 font-medium text-sm transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden sm:inline">เพิ่มลิงก์ใหม่</span>
+                </button>
+            </header>
+
+            <!-- Dashboard Content Grid -->
+            <div class="flex-1 p-6 overflow-y-auto">
+                <div id="filter-badge-bar" class="hidden items-center justify-between mb-4 bg-slate-900/50 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-400">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span>กำลังแสดงตัวกรอง:</span>
+                        <span id="active-filter-badge" class="bg-brand-500/10 text-brand-400 border border-brand-500/20 px-2 py-0.5 rounded-md font-medium"></span>
+                    </div>
+                    <button onclick="clearFilters()" class="text-slate-500 hover:text-white transition-colors">
+                        <i class="fa-solid fa-circle-xmark mr-1"></i>ล้างตัวกรอง
+                    </button>
+                </div>
+
+                <!-- Links Cards Grid -->
+                <div id="bookmarks-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Cards Dynamic Content -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden flex-col items-center justify-center text-center py-20">
+                    <div class="w-20 h-20 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center text-slate-600 text-3xl mb-4">
+                        <i class="fa-regular fa-folder-open"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-300">ยังไม่มีลิงก์ที่คุณเซฟไว้</h3>
+                    <p class="text-slate-500 text-sm mt-1 max-w-sm">จัดระเบียบคลังความรู้และลิ้งก์ที่สำคัญของคุณไว้ที่เดียว เริ่มง่ายๆ โดยการกดเพิ่มลิงก์ด้านบน</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="bookmark-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <h3 id="modal-title" class="text-lg font-bold text-white">เพิ่มลิงก์ใหม่</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="bookmark-form" class="p-6 space-y-4">
+                <input type="hidden" id="bookmark-id">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">ลิงก์เว็บ (URL) *</label>
+                    <input type="url" id="modal-url" required placeholder="https://example.com" 
+                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-white placeholder-slate-700 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">ชื่อเว็บ (Title) *</label>
+                    <input type="text" id="modal-title-input" required placeholder="เช่น Notion, Google" 
+                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-white placeholder-slate-700 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">คำอธิบายย่อๆ (Note)</label>
+                    <textarea id="modal-note" rows="2" placeholder="จดข้อความสั้นๆ กันลืมไว้ที่นี่..." 
+                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-white placeholder-slate-700 text-sm resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">หมวดหมู่หลัก</label>
+                    <select id="modal-category" 
+                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-white text-sm">
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">ป้ายกำกับ (คั่นด้วยเครื่องหมายจุลภาค , )</label>
+                    <input type="text" id="modal-tags" placeholder="เช่น ท่องเที่ยว, งานวิจัย, เครื่องมือ" 
+                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-white placeholder-slate-700 text-sm">
+                </div>
+
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm shadow-lg shadow-brand-600/10">
+                    บันทึกข้อมูล
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="categories-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-white">จัดการหมวดหมู่</h3>
+                <button onclick="closeCategoriesModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <form id="new-category-form" onsubmit="addCategory(event)" class="flex gap-2">
+                    <input type="text" id="new-cat-name" required placeholder="ชื่อหมวดหมู่ใหม่..." 
+                        class="flex-1 px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-white text-sm">
+                    <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">
+                        เพิ่ม
+                    </button>
+                </form>
+                <div class="max-h-60 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800" id="manage-cats-list">
+                    <!-- Dynamic List -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sheets-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl my-8">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel text-emerald-500"></i>
+                    สำรองข้อมูล Google Sheets
+                </h3>
+                <button onclick="closeSheetsModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Google Web App URL (จากขั้นตอนติดตั้งด้านล่าง)</label>
+                    <input type="url" id="sheets-script-url" placeholder="https://script.google.com/macros/s/.../exec" 
+                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white text-sm placeholder-slate-700">
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="saveSheetsUrl()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white py-2.5 rounded-xl font-medium text-xs transition-colors">
+                        บันทึก URL ลิงก์
+                    </button>
+                    <button id="btn-sync-sheets" onclick="syncToGoogleSheets()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">
+                        <i class="fa-solid fa-rotate animate-spin hidden" id="sheets-sync-spinner"></i>
+                        <span id="sheets-sync-text">อัปโหลดซิงก์ข้อมูลทันที</span>
+                    </button>
+                </div>
+
+                <!-- Step-by-Step Guide -->
+                <div class="border border-slate-800 rounded-xl bg-slate-950/60 p-4 text-xs space-y-3">
+                    <span class="font-bold text-slate-300 block mb-1">🛠️ ขั้นตอนเปิดการเชื่อมต่อ (ทำครั้งเดียวใน 1 นาที):</span>
+                    <ol class="list-decimal pl-4 space-y-2 text-slate-400">
+                        <li>ไปที่ <a href="https://sheets.google.com" target="_blank" class="text-emerald-400 underline">Google Sheets</a> แล้วสร้างสเปรดชีตว่างขึ้นมาใหม่</li>
+                        <li>กดเมนู <b>ส่วนขยาย (Extensions)</b> > <b>Apps Script</b></li>
+                        <li>คัดลอกโค้ดสคริปต์ด้านล่างนี้ไปวางแทนที่ของเดิมทั้งหมด:</li>
+                    </ol>
+
+                    <!-- Apps Script Code block for user copy -->
+                    <div class="relative bg-slate-900 p-3 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 max-h-36 overflow-y-auto">
+                        <button onclick="copyAppsScriptCode()" class="absolute top-2 right-2 bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded transition-colors text-[10px]">
+                            คัดลอกโค้ด
+                        </button>
+                        <pre id="apps-script-code-text">function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    sheet.clear();
+    sheet.appendRow(["Title", "URL", "Category", "Tags", "Note", "Created At"]);
+    
+    var headerRange = sheet.getRange(1, 1, 1, 6);
+    headerRange.setFontWeight("bold");
+    headerRange.setBackground("#7c3aed");
+    headerRange.setFontColor("#ffffff");
+    
+    if (data.bookmarks && data.bookmarks.length > 0) {
+      for (var i = 0; i < data.bookmarks.length; i++) {
+        var b = data.bookmarks[i];
+        var tagsStr = b.tags ? b.tags.join(", ") : "";
+        sheet.appendRow([b.title, b.url, b.category, tagsStr, b.note, b.createdAt]);
+      }
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+                    </div>
+
+                    <ol class="list-decimal pl-4 space-y-2 text-slate-400" start="4">
+                        <li>กดปุ่ม <b>ทำให้ใช้งานได้ (Deploy)</b> > <b>การทำให้ใช้งานได้ใหม่ (New deployment)</b> ที่มุมขวาบน</li>
+                        <li>เลือกประเภทเป็น <b>เว็บแอป (Web app)</b> (กดที่เฟืองหากไม่เห็น)</li>
+                        <li>ตั้งค่าผู้มีสิทธิ์เข้าถึงเป็น <b>ทุกคน (Anyone)</b> แล้วกด Deploy</li>
+                        <li>คัดลอก <b>URL เว็บแอป</b> ที่ได้ มาวางในช่องกรอกด้านบนสุด และกดบันทึก!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="alert-modal" class="hidden fixed inset-0 z-[200] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
+            <div id="alert-icon" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-white bg-brand-600">
+                <i class="fa-solid fa-circle-info text-xl"></i>
+            </div>
+            <h4 id="alert-title" class="text-md font-bold text-white mb-2">แจ้งเตือน</h4>
+            <p id="alert-message" class="text-slate-400 text-xs mb-5 leading-relaxed">ข้อความระบบ</p>
+            <button onclick="closeAlertModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded-xl text-xs transition-colors">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-[200] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
+            <div class="w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+            </div>
+            <h4 id="confirm-title" class="text-md font-bold text-white mb-2">ยืนยันการดำเนินการ</h4>
+            <p id="confirm-message" class="text-slate-400 text-xs mb-5 leading-relaxed">ข้อความยืนยัน</p>
+            <div class="flex gap-2">
+                <button id="btn-confirm-cancel" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-xs transition-colors">
+                    ยกเลิก
+                </button>
+                <button id="btn-confirm-ok" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2 rounded-xl text-xs transition-colors">
+                    ยืนยัน
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Libraries -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase configuration retrieved from the execution environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'personal-bookmarks-system';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {
+                // Fallback demo config
+                apiKey: "",
+                authDomain: "",
+                projectId: "",
+                storageBucket: "",
+                messagingSenderId: "",
+                appId: ""
+            };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let userId = null;
+        let onlineStateLoaded = false;
+
+        // Global state template
+        const DEFAULT_CATEGORIES = ['งานทั่วไป', 'ความรู้', 'ความบันเทิง', 'เครื่องมือพัฒนา', 'การเงิน'];
+        
+        window.state = {
+            isSetup: false,
+            passwordHash: '',
+            categories: [...DEFAULT_CATEGORIES],
+            bookmarks: [],
+            googleSheetsUrl: '',
+            activeFilter: {
+                type: 'all', // 'all', 'category', 'tag'
+                value: ''
+            }
+        };
+
+        async function runAuth() {
+            try {
+                let userCred;
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    userCred = await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    userCred = await signInAnonymously(auth);
+                }
+                
+                if (userCred && userCred.user) {
+                    userId = userCred.user.uid;
+                    listenToOnlineData();
+                } else {
+                    useOfflineFallback();
+                }
+            } catch (err) {
+                console.warn("Cloud connection not active. Running on local mode:", err);
+                useOfflineFallback();
+            }
+        }
+
+        // Setup Realtime Cloud Sync
+        function listenToOnlineData() {
+            // Strict Path matching RULE 1
+            const docRef = doc(db, 'artifacts', appId, 'users', userId, 'dashboard', 'state');
+            
+            // Realtime Sync Listener
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const onlineData = docSnap.data();
+                    window.state.passwordHash = onlineData.passwordHash || '';
+                    window.state.categories = onlineData.categories || [...DEFAULT_CATEGORIES];
+                    window.state.bookmarks = onlineData.bookmarks || [];
+                    window.state.googleSheetsUrl = onlineData.googleSheetsUrl || '';
+                    
+                    window.state.isSetup = !!window.state.passwordHash;
+                } else {
+                    // Migrate from localStorage to online database if local has data
+                    loadLocalData();
+                    saveState();
+                }
+                onlineStateLoaded = true;
+                hideLoadingOverlay();
+                initAppUI();
+                render();
+            }, (error) => {
+                console.error("Firestore loading error:", error);
+                useOfflineFallback();
+            });
+        }
+
+        function useOfflineFallback() {
+            loadLocalData();
+            onlineStateLoaded = true;
+            hideLoadingOverlay();
+            initAppUI();
+            render();
+        }
+
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) overlay.classList.add('hidden');
+        }
+
+        // Save State Online/Offline
+        window.saveState = async function() {
+            if (userId && onlineStateLoaded) {
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'dashboard', 'state');
+                try {
+                    await setDoc(docRef, {
+                        passwordHash: window.state.passwordHash,
+                        categories: window.state.categories,
+                        bookmarks: window.state.bookmarks,
+                        googleSheetsUrl: window.state.googleSheetsUrl || '',
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (e) {
+                    console.error("Cloud saving failed:", e);
+                }
+            } else {
+                localStorage.setItem('personal_dashboard_state', JSON.stringify(window.state));
+            }
+            render();
+        }
+
+        function loadLocalData() {
+            const saved = localStorage.getItem('personal_dashboard_state');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                window.state.passwordHash = parsed.passwordHash || '';
+                window.state.categories = parsed.categories || [...DEFAULT_CATEGORIES];
+                window.state.bookmarks = parsed.bookmarks || [];
+                window.state.googleSheetsUrl = parsed.googleSheetsUrl || '';
+                window.state.isSetup = !!window.state.passwordHash;
+            } else {
+                window.state.isSetup = false;
+            }
+        }
+
+        // Run Auth when script loads
+        runAuth();
+    </script>
+
+    <script>
+        // Custom Modal Actions replacing default window.alert/confirm
+        let confirmPromiseResolver;
+        function showConfirm(title, message, onOk) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-message').innerText = message;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+            
+            document.getElementById('btn-confirm-ok').onclick = function() {
+                document.getElementById('confirm-modal').classList.add('hidden');
+                if (onOk) onOk();
+            };
+            document.getElementById('btn-confirm-cancel').onclick = function() {
+                document.getElementById('confirm-modal').classList.add('hidden');
+            };
+        }
+
+        function showAlert(title, message, isError = false) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            const iconContainer = document.getElementById('alert-icon');
+            if (isError) {
+                iconContainer.className = "w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4";
+                iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-xl"></i>';
+            } else {
+                iconContainer.className = "w-12 h-12 bg-brand-500/10 text-brand-500 rounded-full flex items-center justify-center mx-auto mb-4";
+                iconContainer.innerHTML = '<i class="fa-solid fa-circle-check text-xl"></i>';
+            }
+            document.getElementById('alert-modal').classList.remove('hidden');
+        }
+
+        function closeAlertModal() {
+            document.getElementById('alert-modal').classList.add('hidden');
+        }
+
+        // Hashing for Simple Local Protection
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash.toString();
+        }
+
+        // Initialize App Interface
+        function initAppUI() {
+            const authScreen = document.getElementById('auth-screen');
+            const appContainer = document.getElementById('app-container');
+
+            if (!window.state.passwordHash) {
+                authScreen.classList.remove('hidden');
+                document.getElementById('auth-title').innerText = 'ตั้งค่ารหัสผ่านเข้าใช้งาน';
+                document.getElementById('auth-subtitle').innerText = 'คุณเริ่มใช้งานครั้งแรก กรุณาตั้งรหัสผ่านสำหรับเปิดดู Dashboard ของคุณ';
+                document.getElementById('auth-label').innerText = 'ตั้งรหัสผ่านใหม่';
+                document.getElementById('auth-submit-btn').innerHTML = '<span>เริ่มต้นตั้งค่า</span> <i class="fa-solid fa-chevron-right"></i>';
+            } else {
+                if (sessionStorage.getItem('is_authenticated') === 'true') {
+                    authScreen.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                } else {
+                    authScreen.classList.remove('hidden');
+                    appContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        // Submit Auth Form
+        document.getElementById('auth-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const passwordInput = document.getElementById('auth-password');
+            const password = passwordInput.value.trim();
+            const errorText = document.getElementById('auth-error');
+
+            if (!password) return;
+
+            if (!window.state.passwordHash) {
+                // Initial Register
+                window.state.passwordHash = simpleHash(password);
+                window.state.isSetup = true;
+                window.saveState();
+                sessionStorage.setItem('is_authenticated', 'true');
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                passwordInput.value = '';
+            } else {
+                // Normal login
+                if (simpleHash(password) === window.state.passwordHash) {
+                    sessionStorage.setItem('is_authenticated', 'true');
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    document.getElementById('app-container').classList.remove('hidden');
+                    passwordInput.value = '';
+                    errorText.classList.add('hidden');
+                } else {
+                    errorText.classList.remove('hidden');
+                    passwordInput.value = '';
+                }
+            }
+        });
+
+        function logout() {
+            sessionStorage.removeItem('is_authenticated');
+            window.location.reload();
+        }
+
+        function render() {
+            renderCategories();
+            renderTags();
+            renderBookmarks();
+            updateCategoryDropdown();
+        }
+
+        function renderCategories() {
+            const listContainer = document.getElementById('categories-list');
+            listContainer.innerHTML = '';
+
+            const allActive = window.state.activeFilter.type === 'all';
+            const allCount = window.state.bookmarks.length;
+            listContainer.appendChild(createCategoryElement('ทั้งหมด', 'fa-solid fa-globe', allActive, () => {
+                window.state.activeFilter = { type: 'all', value: '' };
+                window.saveState();
+            }, allCount));
+
+            window.state.categories.forEach(cat => {
+                const count = window.state.bookmarks.filter(b => b.category === cat).length;
+                const isActive = window.state.activeFilter.type === 'category' && window.state.activeFilter.value === cat;
+                listContainer.appendChild(createCategoryElement(cat, 'fa-regular fa-folder', isActive, () => {
+                    window.state.activeFilter = { type: 'category', value: cat };
+                    window.saveState();
+                }, count));
+            });
+        }
+
+        function createCategoryElement(name, iconClass, isActive, onClick, count) {
+            const btn = document.createElement('button');
+            btn.className = `w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-sm font-medium ${
+                isActive 
+                    ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/10' 
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+            }`;
+            btn.onclick = onClick;
+
+            btn.innerHTML = `
+                <div class="flex items-center gap-2.5 truncate">
+                    <i class="${iconClass} ${isActive ? 'text-white' : 'text-slate-500'}"></i>
+                    <span class="truncate">${name}</span>
+                </div>
+                <span class="text-xs px-2 py-0.5 rounded-md ${isActive ? 'bg-brand-500/30 text-white' : 'bg-slate-800 text-slate-400'}">${count}</span>
+            `;
+            return btn;
+        }
+
+        function renderTags() {
+            const container = document.getElementById('tags-list');
+            container.innerHTML = '';
+
+            const tagMap = {};
+            window.state.bookmarks.forEach(b => {
+                if (b.tags) {
+                    b.tags.forEach(t => {
+                        if (t.trim()) tagMap[t.trim()] = (tagMap[t.trim()] || 0) + 1;
+                    });
+                }
+            });
+
+            if (Object.keys(tagMap).length === 0) {
+                container.innerHTML = '<span class="text-xs text-slate-600 italic px-2">ไม่มีแท็กบันทึกอยู่</span>';
+                return;
+            }
+
+            Object.entries(tagMap).forEach(([tag, count]) => {
+                const isActive = window.state.activeFilter.type === 'tag' && window.state.activeFilter.value === tag;
+                const btn = document.createElement('button');
+                btn.className = `text-xs px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1.5 ${
+                    isActive 
+                        ? 'bg-brand-600/20 text-brand-300 border-brand-500/40' 
+                        : 'bg-slate-800 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+                }`;
+                btn.onclick = () => {
+                    window.state.activeFilter = { type: 'tag', value: tag };
+                    window.saveState();
+                };
+                btn.innerHTML = `<span>#${tag}</span><span class="text-[10px] text-slate-500 bg-slate-950 px-1 rounded">${count}</span>`;
+                container.appendChild(btn);
+            });
+        }
+
+        function updateCategoryDropdown() {
+            const dropdown = document.getElementById('modal-category');
+            if (dropdown) {
+                dropdown.innerHTML = '';
+                window.state.categories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.innerText = cat;
+                    dropdown.appendChild(opt);
+                });
+            }
+        }
+
+        function renderBookmarks() {
+            const grid = document.getElementById('bookmarks-grid');
+            const emptyState = document.getElementById('empty-state');
+            const searchInput = document.getElementById('search-input').value.toLowerCase().trim();
+            const filterBadgeBar = document.getElementById('filter-badge-bar');
+            const activeFilterBadge = document.getElementById('active-filter-badge');
+
+            let filtered = [...window.state.bookmarks];
+
+            if (window.state.activeFilter.type === 'category') {
+                filtered = filtered.filter(b => b.category === window.state.activeFilter.value);
+                filterBadgeBar.classList.remove('hidden');
+                filterBadgeBar.classList.add('flex');
+                activeFilterBadge.innerHTML = `<i class="fa-regular fa-folder mr-1"></i>หมวดหมู่: ${window.state.activeFilter.value}`;
+            } else if (window.state.activeFilter.type === 'tag') {
+                filtered = filtered.filter(b => b.tags && b.tags.includes(window.state.activeFilter.value));
+                filterBadgeBar.classList.remove('hidden');
+                filterBadgeBar.classList.add('flex');
+                activeFilterBadge.innerHTML = `<i class="fa-solid fa-hashtag mr-1"></i>แท็ก: ${window.state.activeFilter.value}`;
+            } else {
+                filterBadgeBar.classList.add('hidden');
+            }
+
+            if (searchInput) {
+                filtered = filtered.filter(b => 
+                    b.title.toLowerCase().includes(searchInput) || 
+                    (b.note && b.note.toLowerCase().includes(searchInput)) || 
+                    b.url.toLowerCase().includes(searchInput) ||
+                    (b.tags && b.tags.some(t => t.toLowerCase().includes(searchInput)))
+                );
+            }
+
+            grid.innerHTML = '';
+
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            filtered.forEach(b => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 flex flex-col justify-between transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-600/5 group relative";
+                
+                const domain = b.url.replace('https://','').replace('http://','').split('/')[0];
+                const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
+                const tags = b.tags || [];
+                const tagElements = tags.map(t => t.trim() ? `<span class="bg-slate-950 text-slate-400 text-[11px] px-2 py-0.5 rounded border border-slate-800 hover:border-slate-700 hover:text-white transition-all cursor-pointer" onclick="filterByTag('${t.trim()}')">#${t.trim()}</span>` : '').join('');
+
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <span class="bg-brand-500/10 text-brand-400 text-xs px-2.5 py-1 rounded-lg border border-brand-500/10 font-medium">
+                                ${b.category}
+                            </span>
+                            <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 transition-opacity duration-200">
+                                <button onclick="editBookmark('${b.id}')" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors" title="แก้ไข">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <button onclick="deleteBookmark('${b.id}')" class="text-slate-400 hover:text-red-400 p-1 rounded hover:bg-slate-800 transition-colors" title="ลบ">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 mt-1">
+                            <div class="w-10 h-10 bg-slate-950 rounded-xl flex items-center justify-center p-2 shrink-0 border border-slate-800">
+                                <img src="${faviconUrl}" alt="" onerror="this.src='https://placehold.co/64x64/2E4D68/FFFFFF?text=?'" class="w-full h-full object-contain rounded">
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <a href="${b.url}" target="_blank" class="block font-semibold text-white hover:text-brand-400 transition-colors text-sm truncate pr-1" title="${b.title}">
+                                    ${b.title}
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1 text-slate-500 group-hover:text-brand-400 transition-colors"></i>
+                                </a>
+                                <p class="text-slate-400 text-xs mt-1 line-clamp-2 leading-relaxed" title="${b.note || 'ไม่มีคำอธิบายเพิ่มเติม'}">
+                                    ${b.note || '<span class="text-slate-600 italic">ไม่มีบันทึกข้อความ</span>'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1.5 mt-4 pt-3 border-t border-slate-800/60">
+                        ${tagElements || '<span class="text-[10px] text-slate-600 italic">ไม่มีป้ายกำกับ</span>'}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // FILTER HANDLING
+        function filterLinks() {
+            renderBookmarks();
+        }
+
+        function filterByTag(tag) {
+            window.state.activeFilter = { type: 'tag', value: tag };
+            window.saveState();
+        }
+
+        function clearFilters() {
+            window.state.activeFilter = { type: 'all', value: '' };
+            window.saveState();
+        }
+
+        function openAddModal() {
+            document.getElementById('bookmark-id').value = '';
+            document.getElementById('modal-title').innerText = 'เพิ่มลิงก์ใหม่';
+            document.getElementById('bookmark-form').reset();
+            document.getElementById('bookmark-modal').classList.remove('hidden');
+        }
+
+        function editBookmark(id) {
+            const b = window.state.bookmarks.find(item => item.id === id);
+            if (!b) return;
+
+            document.getElementById('bookmark-id').value = b.id;
+            document.getElementById('modal-title').innerText = 'แก้ไขข้อมูลลิงก์';
+            document.getElementById('modal-url').value = b.url;
+            document.getElementById('modal-title-input').value = b.title;
+            document.getElementById('modal-note').value = b.note || '';
+            document.getElementById('modal-category').value = b.category;
+            document.getElementById('modal-tags').value = b.tags ? b.tags.join(', ') : '';
+
+            document.getElementById('bookmark-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('bookmark-modal').classList.add('hidden');
+        }
+
+        document.getElementById('bookmark-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('bookmark-id').value;
+            const url = document.getElementById('modal-url').value.trim();
+            const title = document.getElementById('modal-title-input').value.trim();
+            const note = document.getElementById('modal-note').value.trim();
+            const category = document.getElementById('modal-category').value;
+            const tagInput = document.getElementById('modal-tags').value;
+
+            const tags = tagInput.split(',')
+                                  .map(t => t.trim())
+                                  .filter(t => t !== '');
+
+            if (id) {
+                // Update
+                const index = window.state.bookmarks.findIndex(b => b.id === id);
+                if (index !== -1) {
+                    window.state.bookmarks[index] = { ...window.state.bookmarks[index], url, title, note, category, tags };
+                }
+            } else {
+                // Create
+                const newBookmark = {
+                    id: Date.now().toString(),
+                    url,
+                    title,
+                    note,
+                    category,
+                    tags,
+                    createdAt: new Date().toISOString()
+                };
+                window.state.bookmarks.unshift(newBookmark);
+            }
+
+            window.saveState();
+            closeModal();
+        });
+
+        function deleteBookmark(id) {
+            showConfirm(
+                'ต้องการลบลิงก์นี้?', 
+                'ข้อมูลของลิงก์ที่เลือกจะถูกลบออกจากฐานข้อมูลคลาวด์ของคุณถาวร ยืนยันการดำเนินงาน?', 
+                () => {
+                    window.state.bookmarks = window.state.bookmarks.filter(b => b.id !== id);
+                    window.saveState();
+                }
+            );
+        }
+
+        function openManageCategoriesModal() {
+            renderManageCategoriesList();
+            document.getElementById('categories-modal').classList.remove('hidden');
+        }
+
+        function closeCategoriesModal() {
+            document.getElementById('categories-modal').classList.add('hidden');
+        }
+
+        function renderManageCategoriesList() {
+            const container = document.getElementById('manage-cats-list');
+            container.innerHTML = '';
+
+            window.state.categories.forEach(cat => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 bg-slate-900/50 text-slate-300';
+                item.innerHTML = `
+                    <span class="text-sm font-medium text-white">${cat}</span>
+                    <button onclick="removeCategory('${cat}')" class="text-slate-500 hover:text-red-400 p-1 transition-colors" title="ลบหมวดหมู่">
+                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    </button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addCategory(e) {
+            e.preventDefault();
+            const input = document.getElementById('new-cat-name');
+            const name = input.value.trim();
+            if (!name) return;
+
+            if (window.state.categories.includes(name)) {
+                showAlert('ข้อผิดพลาด', 'หมวดหมู่นี้มีอยู่ในระบบแล้ว', true);
+                return;
+            }
+
+            window.state.categories.push(name);
+            window.saveState();
+            input.value = '';
+            renderManageCategoriesList();
+        }
+
+        function removeCategory(name) {
+            const hasBookmarks = window.state.bookmarks.some(b => b.category === name);
+            if (hasBookmarks) {
+                showConfirm(
+                    'ยืนยันลบหมวดหมู่?', 
+                    `มีลิงก์จัดเก็บอยู่ในหมวดหมู่ "${name}" หากทำการลบ ลิงก์ทั้งหมดในนี้จะย้ายไปอยู่กลุ่ม "งานทั่วไป" แทน คุณต้องการดำเนินการต่อหรือไม่?`, 
+                    () => {
+                        window.state.bookmarks = window.state.bookmarks.map(b => b.category === name ? { ...b, category: window.state.categories[0] } : b);
+                        window.state.categories = window.state.categories.filter(c => c !== name);
+                        window.saveState();
+                        renderManageCategoriesList();
+                    }
+                );
+            } else {
+                window.state.categories = window.state.categories.filter(c => c !== name);
+                window.saveState();
+                renderManageCategoriesList();
+            }
+        }
+
+        function openSheetsModal() {
+            document.getElementById('sheets-script-url').value = window.state.googleSheetsUrl || '';
+            document.getElementById('sheets-modal').classList.remove('hidden');
+        }
+
+        function closeSheetsModal() {
+            document.getElementById('sheets-modal').classList.add('hidden');
+        }
+
+        function saveSheetsUrl() {
+            const urlInput = document.getElementById('sheets-script-url').value.trim();
+            window.state.googleSheetsUrl = urlInput;
+            window.saveState();
+            showAlert('สำเร็จ', 'บันทึกตำแหน่งไฟล์ Google Sheets เรียบร้อย');
+        }
+
+        async function syncToGoogleSheets() {
+            const url = document.getElementById('sheets-script-url').value.trim();
+            if (!url) {
+                showAlert('ไม่สามารถส่งข้อมูลได้', 'กรุณาระบุ URL ของ Google Web App ก่อนทำการซิงก์ข้อมูล', true);
+                return;
+            }
+
+            const spinner = document.getElementById('sheets-sync-spinner');
+            const btnText = document.getElementById('sheets-sync-text');
+            const btn = document.getElementById('btn-sync-sheets');
+
+            // Set loading state
+            spinner.classList.remove('hidden');
+            btnText.innerText = 'กำลังส่งข้อมูล...';
+            btn.disabled = true;
+
+            const payload = {
+                bookmarks: window.state.bookmarks,
+                categories: window.state.categories
+            };
+
+            try {
+                // Post to Google Apps Script. No-cors mode lets us trigger the webhook easily
+                await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                // Save current URL config
+                window.state.googleSheetsUrl = url;
+                window.saveState();
+
+                showAlert('ส่งข้อมูลเสร็จสิ้น', 'ข้อมูล Bookmark ทั้งหมดของคุณถูกอัปโหลดและเขียนทับบน Google Sheet สำเร็จแล้ว!');
+            } catch (err) {
+                console.error("Sync error:", err);
+                showAlert('เกิดข้อผิดพลาด', 'ไม่สามารถส่งข้อมูลไปที่ Google Sheets ได้ กรุณาตรวจสอบ URL หรือการตั้งค่าสิทธิการเข้าถึงของทุกคน (Anyone) บน Google Script', true);
+            } finally {
+                spinner.classList.add('hidden');
+                btnText.innerText = 'อัปโหลดซิงก์ข้อมูลทันที';
+                btn.disabled = false;
+            }
+        }
+
+        function copyAppsScriptCode() {
+            const codeText = document.getElementById('apps-script-code-text').innerText;
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = codeText;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            
+            // Required Clipboard fallback for environments
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+            
+            showAlert('คัดลอกสำเร็จ', 'คัดลอกโค้ดสคริปต์ลงในคลิปบอร์ดแล้ว นำไปวางใน Google Apps Script ได้ทันที!');
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `bookmarks_backup_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchorElem.click();
+        }
+
+        function importData(event) {
+            const input = event.target;
+            const reader = new FileReader();
+            reader.onload = function() {
+                try {
+                    const importedState = JSON.parse(reader.result);
+                    if (importedState && Array.isArray(importedState.bookmarks) && Array.isArray(importedState.categories)) {
+                        showConfirm(
+                            'นำเข้าข้อมูลใหม่?',
+                            'ข้อมูลเดิมของคุณบนคลาวด์จะถูกแทนที่ด้วยข้อมูลจากไฟล์สำรองทั้งหมด ยืนยันการนำเข้า?',
+                            () => {
+                                window.state.bookmarks = importedState.bookmarks;
+                                window.state.categories = importedState.categories;
+                                if (importedState.passwordHash) {
+                                    window.state.passwordHash = importedState.passwordHash;
+                                }
+                                if (importedState.googleSheetsUrl) {
+                                    window.state.googleSheetsUrl = importedState.googleSheetsUrl;
+                                }
+                                window.saveState();
+                                showAlert('สำเร็จ', 'นำเข้าข้อมูลไฟล์สำรองสำเร็จเรียบร้อยแล้ว!');
+                            }
+                        );
+                    } else {
+                        showAlert('ข้อผิดพลาด', 'โครงสร้างไฟล์ JSON สำรองข้อมูลไม่ถูกต้อง', true);
+                    }
+                } catch (e) {
+                    showAlert('ข้อผิดพลาด', 'ไม่สามารถอ่านไฟล์ได้: ' + e.message, true);
+                }
+            };
+            if (input.files[0]) {
+                reader.readAsText(input.files[0]);
+            }
+        }
+    </script>
+</body>
+</html>
